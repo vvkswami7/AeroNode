@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AeroNode Command Center – real-time venue telemetry dashboard with AI-powered crowd-surge routing for large sporting events.">
+    <title>AeroNode Command Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0d1117; color: #c9d1d9; }
+        .node-card {
+            transition: all 0.3s ease;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .status-red {
+            background-color: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            animation: pulse-red 2s infinite;
+        }
+        .status-green {
+            background-color: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+        }
+        .feed-item {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col font-sans overflow-hidden">
+    <!-- Skip navigation link for keyboard/screen-reader users -->
+    <a href="#main-content"
+       class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-blue-600 focus:text-white focus:px-4 focus:py-2 focus:rounded focus:outline-none focus:ring-2 focus:ring-white"
+    >Skip to main content</a>
+    <!-- Header -->
+    <header role="banner" aria-label="AeroNode Command Center header" class="glass-panel p-4 flex justify-between items-center z-10 shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-blue-500 animate-pulse" role="img" aria-label="System online indicator"></div>
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+                AeroNode Command Center
+            </h1>
+        </div>
+        <div class="text-sm text-gray-400 font-mono">
+            System Status: <span class="text-green-400">Online</span>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="main-content" aria-label="Dashboard panels" class="flex-1 flex overflow-hidden p-6 gap-6">
+        
+        <!-- Left Panel: Venue Map -->
+        <section aria-label="Venue node map" class="flex-[3] glass-panel rounded-xl flex flex-col relative shadow-2xl">
+            <div class="p-4 border-b border-gray-700/50 flex justify-between items-center bg-gray-800/30 rounded-t-xl">
+                <h2 class="text-xl font-semibold flex items-center gap-2 text-blue-300">
+                    <svg aria-hidden="true" focusable="false" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+                    Venue Map
+                </h2>
+                <div role="list" aria-label="Node status legend" class="flex gap-4 text-xs font-mono text-gray-400">
+                    <div role="listitem" class="flex items-center gap-1"><span aria-hidden="true" class="w-2 h-2 rounded-full bg-green-500"></span> Normal</div>
+                    <div role="listitem" class="flex items-center gap-1"><span aria-hidden="true" class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span> Alert</div>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-auto p-6 relative">
+                <!-- Decorative background elements -->
+                <div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#3b82f6 1px, transparent 1px); background-size: 30px 30px;"></div>
+                
+                <!-- Grid of Nodes -->
+                <div id="node-grid" role="grid" aria-label="Network nodes status grid" class="grid grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-4 relative z-10">
+                    <!-- Nodes will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: AI Command Feed -->
+        <section aria-label="AI command feed" class="flex-1 glass-panel rounded-xl flex flex-col shadow-2xl min-w-[300px]">
+            <div class="p-4 border-b border-gray-700/50 bg-gray-800/30 rounded-t-xl">
+                <h2 class="text-xl font-semibold flex items-center gap-2 text-purple-300">
+                    <svg aria-hidden="true" focusable="false" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    AI Command Feed
+                </h2>
+            </div>
+            
+            <div id="ai-feed" role="log" aria-live="polite" aria-atomic="false" aria-label="AI routing commands log" class="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-sm">
+                <!-- Initial connection message -->
+                <div class="feed-item bg-gray-800/60 border border-gray-700 rounded-lg p-3 text-gray-300">
+                    <div class="text-xs text-blue-400 mb-1">System initialized</div>
+                    Awaiting commands from Gemini Engine...
+                </div>
+                <!-- Commands will be injected here -->
+            </div>
+        </section>
+        
+    </main>
+
+    <script>
+        // Init nodes (1 to 50)
+        // Hardcoding types for visual variety to match original spec concepts
+        const types = ['Gate', 'Food', 'Bathroom'];
+        
+        function initGrid() {
+            const grid = document.getElementById('node-grid');
+            grid.innerHTML = ''; // Clear
+            
+            for (let i = 1; i <= 50; i++) {
+                // Determine a pseudo-random type based on ID for consistency
+                const type = types[(i * 7) % types.length];
+                
+                const nodeDiv = document.createElement('div');
+                nodeDiv.id = `node-${i}`;
+                nodeDiv.setAttribute('role', 'gridcell');
+                nodeDiv.setAttribute('aria-label', `Node ${i}, type ${type}, status: Normal, awaiting data`);
+                nodeDiv.className = `node-card status-green relative flex flex-col items-center justify-center p-3 rounded-lg shadow-md cursor-help overflow-hidden group`;
+                
+                // Content
+                nodeDiv.innerHTML = `
+                    <div aria-hidden="true" class="text-xs font-bold text-gray-400 mb-1 z-10 opacity-70 group-hover:opacity-100 transition-opacity uppercase tracking-wider">${type}</div>
+                    <div aria-hidden="true" class="text-xl font-extrabold text-white z-10 drop-shadow-md">N${i}</div>
+                    <!-- Tooltip data (hidden by default, updated by JS) -->
+                    <div id="tooltip-${i}" class="absolute -top-12 left-1/2 transform -translate-x-1/2 p-2 bg-gray-900 border border-gray-700 rounded shadow-xl text-xs whitespace-nowrap z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none hidden">
+                        Waiting for data...
+                    </div>
+                `;
+                grid.appendChild(nodeDiv);
+            }
+        }
+
+        initGrid();
+
+        const feedContainer = document.getElementById('ai-feed');
+        // Keep track of recent commands to avoid duplicate appending if state endpoint is slow or repeats
+        const recentCommands = new Set();
+        let cmdCounter = 0;
+
+        function addCommandToFeed(commandMsg, timestamp) {
+            // Simple deduplication - if we've seen this exact timestamp/msg combo recently
+            const sig = `${timestamp}-${commandMsg}`;
+            if (recentCommands.has(sig)) return;
+            
+            recentCommands.add(sig);
+            if (recentCommands.size > 20) {
+                // keep size manageable (FIFO would be better but this is simple)
+                const it = recentCommands.values();
+                recentCommands.delete(it.next().value);
+            }
+
+            const item = document.createElement('div');
+            item.className = 'feed-item bg-purple-900/20 border border-purple-500/30 rounded-lg p-3 text-purple-100 relative overflow-hidden';
+            
+            // formatting timestamp to local readable time
+            let timeStr;
+            try {
+                const d = new Date(timestamp * 1000); // assuming unix timestamp in seconds
+                if (isNaN(d.getTime())) { // fallback if it was already ms or string
+                     timeStr = new Date().toLocaleTimeString();
+                } else {
+                     timeStr = d.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' }) + '.' + d.getMilliseconds().toString().padStart(3, '0');
+                }
+            } catch(e) {
+                timeStr = timestamp || new Date().toLocaleTimeString();
+            }
+
+            item.innerHTML = `
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-purple-500"></div>
+                <div class="flex justify-between items-center mb-1 text-xs opacity-75">
+                    <span class="text-purple-300 font-bold">CMD_REC</span>
+                    <span>${timeStr}</span>
+                </div>
+                <div>${commandMsg}</div>
+            `;
+            
+            feedContainer.insertBefore(item, feedContainer.firstChild);
+            
+            // Optional: limit feed items
+            if (feedContainer.children.length > 50) {
+                feedContainer.removeChild(feedContainer.lastChild);
+            }
+        }
+
+        async function fetchTelemetry() {
+            try {
+                const response = await fetch('/api/state');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                
+                // Structure expected:
+                // data.nodes = { "1": { acoustic_density: 45, rf_attenuation: 0.2, ... }, ... }
+                // data.active_command = "msg" or null/undefined
+                // data.command_timestamp = timestamp or null/undefined
+                
+                if (data && data.nodes) {
+                    for (const [nodeId, metrics] of Object.entries(data.nodes)) {
+                        const elemId = `node-${nodeId}`;
+                        const elem = document.getElementById(elemId);
+                        
+                        if (elem) {
+                            const ac = metrics.acoustic_density !== undefined ? metrics.acoustic_density : 0;
+                            const rf = metrics.rf_attenuation !== undefined ? metrics.rf_attenuation : 0;
+                            
+                            // Tooltip logic (optional extra flavor)
+                            const tooltip = document.getElementById(`tooltip-${nodeId}`);
+                            if (tooltip) {
+                                tooltip.style.display = 'block';
+                                tooltip.innerHTML = `Ac: ${ac.toFixed(1)} | RF: ${rf.toFixed(2)}`;
+                            }
+
+                            // The Logic requirement:
+                            // acoustic density > 90 AND RF attenuation > 0.85 -> Red/Pulse (ALERT)
+                            if (ac > 90 && rf > 0.85) {
+                                elem.classList.remove('status-green');
+                                elem.classList.add('status-red');
+                                // Update aria-label so screen readers announce the alert
+                                elem.setAttribute('aria-label', `Node ${nodeId}, status: ALERT — Acoustic ${ac}, RF ${rf.toFixed(2)}`);
+                            } else {
+                                elem.classList.remove('status-red');
+                                elem.classList.add('status-green');
+                                // Update aria-label to reflect normal status
+                                elem.setAttribute('aria-label', `Node ${nodeId}, status: Normal — Acoustic ${ac}, RF ${rf.toFixed(2)}`);
+                            }
+                        }
+                    }
+                }
+                
+                // Check for AI command feed
+                if (data && data.active_command) {
+                    const ts = data.command_timestamp || new Date().getTime(); // fallback current time
+                    addCommandToFeed(data.active_command, ts);
+                }
+
+            } catch (error) {
+                console.error("Failed fetching telemetry:", error);
+                // Could show a disconnected state here if desired
+            }
+        }
+
+        // Fetch immediately, then every 2 seconds
+        fetchTelemetry();
+        setInterval(fetchTelemetry, 2000);
+
+    </script>
+</body>
+</html>
